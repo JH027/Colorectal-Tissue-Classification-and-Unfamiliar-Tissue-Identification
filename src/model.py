@@ -1,5 +1,7 @@
+import torch
 import torch.nn as nn
 from torchvision import models
+
 
 def make_model(num_classes):
     """loads ImageNet-pretrained ResNet-18 and swaps the last layer to output num_classes scores"""
@@ -9,3 +11,33 @@ def make_model(num_classes):
     #reads 512 numbers from the img and decides which class it is
     model.fc = nn.Linear(model.fc.in_features, num_classes)
     return model
+
+def train_one_epoch(model, loader, loss_fn, optimizer, device):
+    """one pass over training data, updates weights, returns avg loss and accuracy"""
+    model.train()
+    total_loss, correct, count = 0.0, 0, 0
+    for x, y in loader:
+        x, y = x.to(device), y.to(device)
+        optimizer.zero_grad()
+        out = model(x)
+        loss = loss_fn(out, y)
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item() * len(y)
+        correct += (out.argmax(dim=1) == y).sum().item()
+        count += len(y)
+    return total_loss / count, correct / count
+
+def evaluate(model, loader, loss_fn, device):
+    """one pass over validation data with no weight updates, returns avg loss and accuracy"""
+    model.eval()
+    total_loss, correct, count = 0.0, 0, 0
+    with torch.no_grad():
+        for x, y in loader:
+            x, y = x.to(device), y.to(device)
+            out = model(x)
+            loss = loss_fn(out, y)
+            total_loss += loss.item() * len(y)
+            correct += (out.argmax(dim=1) == y).sum().item()
+            count += len(y)
+    return total_loss / count, correct / count
