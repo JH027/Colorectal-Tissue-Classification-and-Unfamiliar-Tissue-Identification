@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torchvision import models
+from tqdm import tqdm
 
 
 def make_model(num_classes):
@@ -16,7 +17,8 @@ def train_one_epoch(model, loader, loss_fn, optimizer, device):
     """one pass over training data, updates weights, returns avg loss and accuracy"""
     model.train()
     total_loss, correct, count = 0.0, 0, 0
-    for x, y in loader:
+    bar = tqdm(loader, unit="batch", leave=False)
+    for x, y in bar:
         x, y = x.to(device), y.to(device)
         optimizer.zero_grad()
         out = model(x)
