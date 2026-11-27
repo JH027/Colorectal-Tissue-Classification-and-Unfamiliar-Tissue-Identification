@@ -5,6 +5,8 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms as T
 
+
+#predetermined values that torchvision expects to use for normalization of inputs
 MEAN = [0.485, 0.456, 0.406]
 STD = [0.229, 0.224, 0.225]
 
@@ -57,6 +59,20 @@ def make_test_samples(test_root, known, held_out):
         label = label_of.get(c, -1) if c != held_out else -1
         samples += [(p, label) for p in list_images(test_root, c)]
     return samples
+
+def make_subset(samples, n_per_class, seed=42):
+    """keeps at most n_per_class random images from each label, so every class stays represented"""
+    #this to help w/ navigating issue w/ large dataset --> mebbe take way too long to run :')
+    rng = random.Random(seed)
+    by_label = {}
+    for path, label in samples:
+        by_label.setdefault(label, []).append((path, label))
+    subset = []
+    for items in by_label.values():
+        rng.shuffle(items)
+        subset += items[:n_per_class]
+    rng.shuffle(subset)
+    return subset
 
 
 class CRCDataset(Dataset):
